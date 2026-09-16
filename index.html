@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1220">
+<link rel="manifest" href="manifest.json">
+<title>DUIT RAPIH</title>
+<style>
+:root{--bg:#07111f;--card:#101d30;--card2:#14253d;--text:#f4f7fb;--muted:#9fb0c7;--accent:#61e6a7;--accent2:#67a8ff;--danger:#ff6b81;--line:#20324b}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:linear-gradient(150deg,#06101c,#0d1c2e 55%,#07111f);color:var(--text);min-height:100vh}
+button,input,select{font:inherit}button{cursor:pointer;border:0}.wrap{max-width:1050px;margin:auto;padding:22px}.brand{display:flex;align-items:center;gap:12px}.logo{width:46px;height:46px;border-radius:15px;display:grid;place-items:center;background:linear-gradient(135deg,#61e6a7,#67a8ff);font-size:25px;box-shadow:0 10px 35px #0005}.brand b{font-size:21px}.brand small{display:block;color:var(--muted)}
+.auth{max-width:430px;margin:8vh auto}.card{background:#101d30dd;border:1px solid var(--line);border-radius:24px;padding:22px;box-shadow:0 20px 70px #0006;backdrop-filter:blur(12px)}
+h1,h2,h3{margin-top:0}.tabs{display:flex;background:#091525;border-radius:14px;padding:4px;margin:18px 0}.tabs button{flex:1;background:transparent;color:var(--muted);padding:11px;border-radius:11px}.tabs .on{background:#172940;color:#fff}
+label{display:block;color:var(--muted);font-size:13px;margin:12px 0 6px}input,select{width:100%;padding:13px;border-radius:13px;border:1px solid var(--line);background:#091525;color:#fff;outline:0}input:focus,select:focus{border-color:var(--accent)}
+.primary{width:100%;padding:13px;border-radius:13px;background:linear-gradient(135deg,#61e6a7,#4fc6ff);color:#06111c;font-weight:800;margin-top:15px}.ghost{padding:10px 13px;border-radius:12px;background:#172940;color:#fff}.danger{background:#3a1722;color:#ffb4c0}
+.hidden{display:none!important}.top{display:flex;justify-content:space-between;gap:15px;align-items:center;margin-bottom:18px}.hello{color:var(--muted)}.balance{padding:25px;border-radius:25px;background:linear-gradient(135deg,#132b42,#0d1b2d);border:1px solid var(--line);margin-bottom:16px}.balance .amount{font-size:38px;font-weight:850;margin:6px 0}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}.stat{padding:18px;border-radius:19px;background:#101d30;border:1px solid var(--line)}.stat span{color:var(--muted);font-size:12px}.stat strong{display:block;font-size:21px;margin-top:7px}.income{color:var(--accent)}.expense{color:#ff9aaa}.section{margin-top:18px}.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1;min-width:130px}.tx{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}.tx:last-child{border-bottom:0}.tx small{color:var(--muted)}.empty{color:var(--muted);text-align:center;padding:25px}
+@media(max-width:650px){.wrap{padding:14px}.grid{grid-template-columns:1fr}.balance .amount{font-size:31px}.top{align-items:flex-start}.card{padding:17px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="auth" class="auth">
+    <div class="brand"><div class="logo">💰</div><div><b>DUIT RAPIH</b><small>Catatan keuangan yang rapi & modern</small></div></div>
+    <div class="card" style="margin-top:18px">
+      <div class="tabs"><button id="tabLogin" class="on" onclick="showAuth('login')">Masuk</button><button id="tabReg" onclick="showAuth('reg')">Daftar</button></div>
+      <form id="loginForm">
+        <label>Email</label><input id="loginEmail" type="email" required placeholder="nama@email.com">
+        <label>Password</label><input id="loginPw" type="password" required placeholder="Minimal 8 karakter">
+        <button class="primary">Masuk ke DUIT RAPIH</button>
+      </form>
+      <form id="regForm" class="hidden">
+        <label>Nama</label><input id="regName" required placeholder="Nama lengkap">
+        <label>Email</label><input id="regEmail" type="email" required placeholder="nama@email.com">
+        <label>Password</label><input id="regPw" type="password" minlength="8" required placeholder="Minimal 8 karakter">
+        <label>Konfirmasi Password</label><input id="regPw2" type="password" minlength="8" required>
+        <button class="primary">Buat Akun</button>
+      </form>
+      <p id="authMsg" class="hello" style="margin-bottom:0"></p>
+    </div>
+  </div>
+
+  <main id="app" class="hidden">
+    <div class="top">
+      <div class="brand"><div class="logo">💰</div><div><b>DUIT RAPIH</b><small id="hello">Keuangan Anda</small></div></div>
+      <button class="ghost" onclick="logout()">Keluar</button>
+    </div>
+    <div class="balance"><span class="hello">Saldo bulan ini</span><div class="amount" id="balance">Rp0</div><div class="hello" id="monthLabel"></div></div>
+    <div class="grid">
+      <div class="stat"><span>PEMASUKAN</span><strong class="income" id="income">Rp0</strong></div>
+      <div class="stat"><span>PENGELUARAN</span><strong class="expense" id="expense">Rp0</strong></div>
+      <div class="stat"><span>TRANSAKSI</span><strong id="count">0</strong></div>
+    </div>
+    <section class="card section">
+      <h3>Tambah transaksi</h3>
+      <form id="txForm">
+        <div class="row"><select id="type"><option value="income">Pemasukan</option><option value="expense">Pengeluaran</option></select><input id="amount" type="number" min="1" required placeholder="Nominal"></div>
+        <div class="row"><input id="date" type="date" required><select id="cat"><option>Gaji</option><option>Makanan</option><option>Belanja</option><option>Transportasi</option><option>Tagihan</option><option>Cicilan</option><option>Kesehatan</option><option>Pendidikan</option><option>Hiburan</option><option>Lainnya</option></select></div>
+        <input id="note" placeholder="Keterangan (opsional)">
+        <button class="primary">Simpan transaksi</button>
+      </form>
+    </section>
+    <section class="card section"><div class="top"><h3>Riwayat</h3><button class="ghost" onclick="loadTx()">↻ Refresh</button></div><div id="list"></div></section>
+  </main>
+</div>
+<script>
+const API_URL="PASTE_APPS_SCRIPT_WEB_APP_URL_HERE";
+let user=null, tx=[];
+const $=id=>document.getElementById(id);
+const money=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n||0);
+function showAuth(x){$('loginForm').classList.toggle('hidden',x!=='login');$('regForm').classList.toggle('hidden',x!=='reg');$('tabLogin').classList.toggle('on',x==='login');$('tabReg').classList.toggle('on',x==='reg');$('authMsg').textContent=''}
+async function api(action,data={}){if(API_URL.includes('PASTE_')) throw Error('API belum dihubungkan. Masukkan URL Apps Script pada app.js.');let r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,...data})});let j=await r.json();if(!j.ok)throw Error(j.message||'Terjadi kesalahan');return j}
+$('loginForm').onsubmit=async e=>{e.preventDefault();try{let j=await api('login',{email:$('loginEmail').value,password:$('loginPw').value});user=j.user;sessionStorage.setItem('duitUser',JSON.stringify(user));openApp()}catch(x){$('authMsg').textContent=x.message}}
+$('regForm').onsubmit=async e=>{e.preventDefault();if($('regPw').value!==$('regPw2').value)return $('authMsg').textContent='Konfirmasi password tidak sama';try{await api('register',{name:$('regName').value,email:$('regEmail').value,password:$('regPw').value});$('authMsg').textContent='Pendaftaran berhasil. Silakan masuk.';showAuth('login')}catch(x){$('authMsg').textContent=x.message}}
+$('txForm').onsubmit=async e=>{e.preventDefault();try{await api('addTransaction',{userId:user.id,type:$('type').value,amount:Number($('amount').value),date:$('date').value,category:$('cat').value,note:$('note').value});$('txForm').reset();$('date').value=new Date().toISOString().slice(0,10);await loadTx()}catch(x){alert(x.message)}}
+async function loadTx(){try{let j=await api('listTransactions',{userId:user.id});tx=j.transactions||[];render()}catch(x){$('list').innerHTML='<div class="empty">'+x.message+'</div>'}}
+function render(){let now=new Date(), ym=now.toISOString().slice(0,7), cur=tx.filter(x=>String(x.date).slice(0,7)===ym);let inc=cur.filter(x=>x.type==='income').reduce((a,x)=>a+Number(x.amount),0), exp=cur.filter(x=>x.type==='expense').reduce((a,x)=>a+Number(x.amount),0);$('income').textContent=money(inc);$('expense').textContent=money(exp);$('balance').textContent=money(inc-exp);$('count').textContent=cur.length;$('monthLabel').textContent=now.toLocaleDateString('id-ID',{month:'long',year:'numeric'});$('list').innerHTML=tx.slice().reverse().map(x=>`<div class="tx"><div><b>${esc(x.category)}</b><small>${esc(x.date)} · ${esc(x.note||'')}</small></div><strong class="${x.type==='income'?'income':'expense'}">${x.type==='income'?'+':'-'} ${money(x.amount)}</strong></div>`).join('')||'<div class="empty">Belum ada transaksi.</div>'}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function openApp(){ $('auth').classList.add('hidden');$('app').classList.remove('hidden');$('hello').textContent='Halo, '+user.name+' 👋';$('date').value=new Date().toISOString().slice(0,10);loadTx()}
+function logout(){sessionStorage.removeItem('duitUser');location.reload()}
+try{user=JSON.parse(sessionStorage.getItem('duitUser'));if(user)openApp()}catch{}
+</script>
+</body></html>
