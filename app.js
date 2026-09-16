@@ -1,9 +1,144 @@
-const $=id=>document.getElementById(id);let tx=JSON.parse(localStorage.getItem('duit_rapih_tx')||'[]');let month=new Date().toISOString().slice(0,7);
-$('month').value=month;$('date').value=new Date().toISOString().slice(0,10);
-const rupiah=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n);
-function render(){month=$('month').value;let rows=tx.filter(x=>x.date.startsWith(month));let inc=rows.filter(x=>x.type==='income').reduce((a,x)=>a+x.amount,0),out=rows.filter(x=>x.type==='expense').reduce((a,x)=>a+x.amount,0);$('income').textContent=rupiah(inc);$('expense').textContent=rupiah(out);$('saldo').textContent=rupiah(inc-out);$('list').innerHTML=rows.length?rows.sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<div class="item"><div><b>${x.desc||'Tanpa keterangan'}</b><br><small>${x.date} • ${x.category}</small></div><div><b class="${x.type==='income'?'in':'out'}">${x.type==='income'?'+':'-'} ${rupiah(x.amount)}</b><br><button class="delete" onclick="del('${x.id}')">Hapus</button></div></div>`).join(''):'<p>Belum ada transaksi pada bulan ini.</p>'}
-$('add').onclick=()=>{let amount=Number($('amount').value);if(!amount||amount<0)return alert('Masukkan nominal yang benar.');tx.push({id:crypto.randomUUID(),type:$('type').value,date:$('date').value,desc:$('desc').value.trim(),category:$('category').value,amount});localStorage.setItem('duit_rapih_tx',JSON.stringify(tx));$('desc').value='';$('amount').value='';render()};
-window.del=id=>{tx=tx.filter(x=>x.id!==id);localStorage.setItem('duit_rapih_tx',JSON.stringify(tx));render()};
-$('month').onchange=render;$('clear').onclick=()=>{if(confirm('Hapus semua transaksi pada bulan ini?')){tx=tx.filter(x=>!x.date.startsWith(month));localStorage.setItem('duit_rapih_tx',JSON.stringify(tx));render()}};
-$('theme').onclick=()=>{document.body.classList.toggle('dark');localStorage.setItem('duit_rapih_dark',document.body.classList.contains('dark'))};if(localStorage.getItem('duit_rapih_dark')==='true')document.body.classList.add('dark');
-if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');render();
+```javascript
+/* =========================================================
+   DUIT RAPIH
+   Google Apps Script + Google Sheets
+   ========================================================= */
+
+const API_URL = "https://script.google.com/macros/s/AKfycbzed9eGYsAwTXO3b81BTxMnlaU1qCuPbdjiPFmvKecE9tK-WhUlNaRk4rMhoOAVyuy6/exec";
+
+const $ = id => document.getElementById(id);
+
+let tx = [];
+let currentUser = JSON.parse(
+  sessionStorage.getItem("duit_rapih_user") || "null"
+);
+
+let month = new Date().toISOString().slice(0, 7);
+
+
+/* =========================================================
+   FORMAT RUPIAH
+   ========================================================= */
+
+const rupiah = n =>
+  new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0
+  }).format(Number(n) || 0);
+
+
+/* =========================================================
+   TANGGAL DEFAULT
+   ========================================================= */
+
+if ($("month")) {
+  $("month").value = month;
+}
+
+if ($("date")) {
+  $("date").value = new Date().toISOString().slice(0, 10);
+}
+
+
+/* =========================================================
+   CEK API
+   ========================================================= */
+
+async function cekAPI() {
+  try {
+    const response = await fetch(API_URL, {
+      method: "GET"
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      console.log("DUIT RAPIH API aktif.");
+      return true;
+    }
+
+    return false;
+
+  } catch (error) {
+    console.error("API tidak dapat dihubungi:", error);
+    return false;
+  }
+}
+
+
+/* =========================================================
+   REQUEST KE GOOGLE APPS SCRIPT
+   ========================================================= */
+
+async function api(action, data = {}) {
+
+  if (!API_URL || API_URL.includes("PASTE_APPS_SCRIPT")) {
+    throw new Error(
+      "API belum dihubungkan. URL Apps Script belum dimasukkan."
+    );
+  }
+
+  const response = await fetch(API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "text/plain;charset=utf-8"
+    },
+    body: JSON.stringify({
+      action,
+      ...data
+    })
+  });
+
+  const result = await response.json();
+
+  if (!result.success) {
+    throw new Error(result.message || "Terjadi kesalahan.");
+  }
+
+  return result;
+}
+
+
+/* =========================================================
+   LOGIN
+   ========================================================= */
+
+async function login() {
+
+  const emailElement = $("loginEmail") || $("email");
+  const passwordElement = $("loginPassword") || $("password");
+
+  if (!emailElement || !passwordElement) {
+    alert("Form login belum tersedia di index.html.");
+    return;
+  }
+
+  const email = emailElement.value.trim().toLowerCase();
+  const password = passwordElement.value;
+
+  if (!email || !password) {
+    alert("Email dan password wajib diisi.");
+    return;
+  }
+
+  try {
+
+    const result = await api("login", {
+      email,
+      password
+    });
+
+    currentUser = result.user;
+
+    sessionStorage.setItem(
+      "duit_rapih_user",
+      JSON.stringify(currentUser)
+    );
+
+    alert("Login berhasil. Selamat datang " + currentUser.nama + "!");
+
+    await loadTransactions();
+
+    updateUserInterface();
+```
